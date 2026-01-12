@@ -14,12 +14,32 @@ export default function Login({ onLogin }: LoginProps) {
     email: '',
     password: ''
   });
+  const [error, setError] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     // In production, this will call your Spring Boot backend API
     // For now, we just simulate a successful login
-    onLogin();
+    console.log("Logging in with the email:", formData.email)
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/login`, {
+        method: 'POST',
+        credentials: 'include', // A must have for HttpOnly cookies
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(formData)
+      })
+      if (!res.ok) {
+        setError("Invalid email or password")
+        return
+      }
+      setError('')
+      onLogin();
+      navigate("/")
+    } catch (e) {
+      setError("Error caught in login:", )
+    }
   };
 
   return (
@@ -36,6 +56,7 @@ export default function Login({ onLogin }: LoginProps) {
 
         <form onSubmit={handleSubmit} className="space-y-6 bg-white p-8 rounded-lg shadow-sm">
           <div className="space-y-2">
+            <p className="flex items-center justify-center text-red-500">{error}</p>
             <Label htmlFor="email">Email</Label>
             <Input
               id="email"
@@ -59,7 +80,7 @@ export default function Login({ onLogin }: LoginProps) {
             />
           </div>
 
-          <Button type="submit" className="w-full">
+          <Button type="submit" className="w-full cursor-pointer">
             Login
           </Button>
 
@@ -68,7 +89,7 @@ export default function Login({ onLogin }: LoginProps) {
             <button
               type="button"
               onClick={() => navigate('/signup')}
-              className="text-blue-600 hover:underline"
+              className="text-blue-600 hover:underline cursor-pointer"
             >
               Sign up
             </button>

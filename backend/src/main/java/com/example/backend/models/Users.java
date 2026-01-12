@@ -1,11 +1,11 @@
 package com.example.backend.models;
 import jakarta.persistence.*;
-import java.time.Instant; // Recommended for cloud-native apps
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 @Entity
@@ -20,7 +20,7 @@ public class Users {
     @Column(nullable = false, unique = true)
     private String username;
 
-    @Column(nullable = false,unique = true)
+    @Column(nullable = false, unique = true)
     private String email;
     
     @Column(nullable = false)
@@ -32,13 +32,24 @@ public class Users {
             inverseJoinColumns = @JoinColumn(name = "role_id"))
     private Set<Role> roles = new HashSet<>();
 
-    @Column
-    @CreatedDate
-    private Instant createdAt;
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
 
-    @Column
-    @LastModifiedDate
-    private Instant updatedAt;
+    @Column(name = "updated_at", nullable = false)
+    private LocalDateTime updatedAt;
+
+    @CreationTimestamp
+    @PrePersist
+    protected void onCreate() {
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    @UpdateTimestamp
+    @PreUpdate
+    protected void onUpdate() {
+        this.updatedAt = LocalDateTime.now();
+    }
 
     public long getId(){
         return id;
@@ -81,6 +92,6 @@ public class Users {
     public Users(String username, String password, String email){
         this.username = username;
         this.password = password;
-        this.email = email;
+        this.email = email.toLowerCase();
     }
 }

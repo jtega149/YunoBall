@@ -11,10 +11,12 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 // Class is for JWT authentication filter which intercepts incoming HTTP requests to validate JWT tokens
+// JWT filters shouldnt send responses directly, they should only set the authentication context and let Spring Security handle the rest
 public class JwtAuthFilter extends OncePerRequestFilter{
     // Autowired means that Spring will automatically inject the required dependencies
     @Autowired
@@ -37,16 +39,21 @@ public class JwtAuthFilter extends OncePerRequestFilter{
                 SecurityContextHolder.getContext().setAuthentication(authenticationToken); // Set the authentication in the SecurityContext, which is used by Spring Security to authorize the user
             }
         } catch (Exception e) {
-            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid or expired token"); // Responds with 401 unauthorized if token is invalid
-            return;
+            // Don't block the request - let Spring Security handle authorization
+            // This allows public endpoints (like logout) to work even with invalid/expired tokens
+            // Spring Security will handle 401 responses for protected endpoints that require authentication
+            SecurityContextHolder.clearContext(); 
         }
         filterChain.doFilter(request, response); // pass request to next filter, or to the resource if there are no more filters
     }
 
     private String parseJwt(HttpServletRequest request) {
-        String headerAuth = request.getHeader("Authorization");
-        if (headerAuth != null && headerAuth.startsWith("Bearer ")) {
-            return headerAuth.substring(7);
+        if (request.getCookies() == null) return null;
+
+        for (Cookie cookie : request.getCookies()) {
+            if ("jwt".equals(cookie.getName())) { // find the cookie with name "jwt"
+                return cookie.getValue(); // If found then bam we can get the jwt within that cookie
+            }
         }
         return null;
     }
