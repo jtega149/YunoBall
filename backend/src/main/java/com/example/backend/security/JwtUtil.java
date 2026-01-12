@@ -13,17 +13,6 @@ public class JwtUtil {
     private final Key key = Keys.secretKeyFor(SignatureAlgorithm.HS256);
     private final long expiration_time = 1000 * 60 * 60; // 1 hour
 
-    /*
-    public String generateToken(String email) { // Token is basically a string
-        return Jwts.builder() // Activatte build mode for jwt
-                .setSubject(email) // Basically the payload of the jwt
-                .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + expiration_time))
-                .signWith(key, SignatureAlgorithm.HS256) // Using HMAC SHA-256 for signing the jwt
-                .compact(); // Stops build mode and compacts the jwt into a string
-    }
-    */
-
     public String generateToken(Authentication authentication) {
         String email = authentication.getName(); // getName returns the principals name, which is the email in our case
         return Jwts.builder() // Activatte build mode for jwt

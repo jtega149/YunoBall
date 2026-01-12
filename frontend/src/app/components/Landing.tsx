@@ -21,6 +21,7 @@ export default function Landing() {
             onClick={() => navigate('/login')}
             size="lg"
             variant="default"
+            className="cursor-pointer"
           >
             Login
           </Button>
@@ -28,6 +29,7 @@ export default function Landing() {
             onClick={() => navigate('/signup')}
             size="lg"
             variant="outline"
+            className="cursor-pointer"
           >
             Sign Up
           </Button>

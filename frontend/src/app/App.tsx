@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import Landing from './components/Landing';
 import Login from './components/Login';
@@ -17,8 +17,21 @@ function App() {
     setIsAuthenticated(true);
   };
 
-  const handleLogout = () => {
-    setIsAuthenticated(false);
+  const handleLogout = async () => {
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/logout`, {
+        method: "POST",
+        credentials: "include"
+      })
+
+      if (!res.ok) {
+        console.log("Error logging out")
+        return
+      }
+      setIsAuthenticated(false);
+    } catch (e) {
+      console.log("Error in logout:", e)
+    }
   };
 
   return (
