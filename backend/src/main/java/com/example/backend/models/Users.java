@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -26,7 +27,7 @@ public class Users {
     @Column(nullable = false)
     private String password;
 
-    @ManyToMany(fetch = FetchType.LAZY)
+    @ManyToMany(fetch = FetchType.EAGER) // LAZY means roles only loaded when accessed, EAGER means roles loaded immediately with user
     @JoinTable(name = "user_roles",
             joinColumns = @JoinColumn(name = "user_id"),
             inverseJoinColumns = @JoinColumn(name = "role_id"))
@@ -37,6 +38,19 @@ public class Users {
 
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
+
+    /** Defaults help Hibernate generate ADD COLUMN ... DEFAULT 0 so existing rows stay valid in PostgreSQL. */
+    @ColumnDefault("0")
+    @Column(nullable = false)
+    private int wins = 0;
+
+    @ColumnDefault("0")
+    @Column(nullable = false)
+    private int losses = 0;
+
+    @ColumnDefault("0")
+    @Column(name = "total_debates", nullable = false)
+    private int totalDebates = 0;
 
     @CreationTimestamp
     @PrePersist
@@ -81,6 +95,30 @@ public class Users {
     }
     public void setRoles(Set<Role> roles) {
         this.roles = roles;
+    }
+
+    public int getWins() {
+        return wins;
+    }
+
+    public void setWins(int wins) {
+        this.wins = wins;
+    }
+
+    public int getLosses() {
+        return losses;
+    }
+
+    public void setLosses(int losses) {
+        this.losses = losses;
+    }
+
+    public int getTotalDebates() {
+        return totalDebates;
+    }
+
+    public void setTotalDebates(int totalDebates) {
+        this.totalDebates = totalDebates;
     }
 
     public String toString() {

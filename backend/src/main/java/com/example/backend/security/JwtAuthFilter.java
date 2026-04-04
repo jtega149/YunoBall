@@ -42,6 +42,7 @@ public class JwtAuthFilter extends OncePerRequestFilter{
             // Don't block the request - let Spring Security handle authorization
             // This allows public endpoints (like logout) to work even with invalid/expired tokens
             // Spring Security will handle 401 responses for protected endpoints that require authentication
+            System.out.println("Cannot set user authentication: " + e.getMessage());
             SecurityContextHolder.clearContext(); 
         }
         filterChain.doFilter(request, response); // pass request to next filter, or to the resource if there are no more filters

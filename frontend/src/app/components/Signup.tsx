@@ -36,19 +36,27 @@ export default function Signup({ onSignup }: SignupProps) {
 
     setLoading(true);
 
+    const signupUrl = `${import.meta.env.VITE_API_URL}/api/auth/signup`;
+
     try {
-      const res = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/auth/signup`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            username: formData.username,
-            email: formData.email,
-            password: formData.password
-          })
-        }
-      );
+      const res = await fetch(signupUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username: formData.username,
+          email: formData.email,
+          password: formData.password,
+        }),
+      });
+
+      const bodyText = await res.text();
+
+      console.log('[signup] response', {
+        url: signupUrl,
+        status: res.status,
+        statusText: res.statusText,
+        body: bodyText,
+      });
 
       if (res.status === 409) {
         setError('Username or email already in use');
@@ -56,14 +64,19 @@ export default function Signup({ onSignup }: SignupProps) {
       }
 
       if (!res.ok) {
-        setError('Signup failed. Please try again.');
+        setError(
+          bodyText?.trim()
+            ? `Signup failed (${res.status}): ${bodyText.slice(0, 300)}`
+            : `Signup failed (${res.status} ${res.statusText}).`,
+        );
         return;
       }
 
       navigate('/login');
       //onSignup();
 
-    } catch {
+    } catch (err) {
+      console.error('[signup] network or parse error', err);
       setError('Server unreachable. Try again later.');
     } finally {
       setLoading(false);

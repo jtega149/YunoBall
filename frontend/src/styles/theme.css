@@ -133,8 +133,22 @@
   * These are in @layer base, so Tailwind utility classes (like text-sm, text-lg) automatically override them.
   */
 
+  /* ADD THIS */
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+  /* END ADD */
+
   html {
     font-size: var(--font-size);
+  }
+
+  /* Room page: prevent white flash on overscroll or when viewport is small */
+  html.room-page,
+  body.room-page {
+    background: #030712;
   }
 
   h1 {

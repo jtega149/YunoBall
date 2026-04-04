@@ -34,6 +34,11 @@ export default function Login({ onLogin }: LoginProps) {
         setError("Invalid email or password")
         return
       }
+
+      const data = await res.json();
+      const username = data.username;
+      localStorage.setItem('username', username);
+
       setError('')
       onLogin();
       navigate("/")

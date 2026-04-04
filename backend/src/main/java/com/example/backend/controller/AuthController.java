@@ -1,9 +1,14 @@
 package com.example.backend.controller;
 
 import java.util.HashSet;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
@@ -27,6 +32,7 @@ import jakarta.servlet.http.HttpServletResponse;
 
 @RestController
 @RequestMapping("/api/auth")
+@CrossOrigin(origins = { "http://localhost:5173", "http://127.0.0.1:5173" }, allowCredentials = "true")
 public class AuthController {
 
     private final UserRepository userRepository;
@@ -45,7 +51,11 @@ public class AuthController {
 
     @PostMapping("/signup")
     public ResponseEntity<?> signup(@RequestBody SignupRequest request) {
-        if (userRepository.findByEmail(request.getEmail()).isPresent()) {
+        String email = request.getEmail() == null ? "" : request.getEmail().trim().toLowerCase(Locale.ROOT);
+        if (email.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Email is required");
+        }
+        if (userRepository.findByEmail(email).isPresent()) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body("Email already in use");
         }
         if (userRepository.findByUsername(request.getUsername()).isPresent()) {
@@ -55,7 +65,7 @@ public class AuthController {
         Users user = new Users(
             request.getUsername(),
             hashedPassword,
-            request.getEmail()
+            email
         );
 
         Set<String> strRoles = request.getRole(); // Getting roles from request
@@ -87,7 +97,8 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest request, HttpServletResponse res) {
-        Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
+        String email = request.getEmail() == null ? "" : request.getEmail().trim().toLowerCase(Locale.ROOT);
+        Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(email, request.getPassword()));
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
         String token = jwtUtil.generateToken(authentication);
@@ -101,7 +112,31 @@ public class AuthController {
             .build();
 
         res.addHeader(HttpHeaders.SET_COOKIE, cookie.toString()); // Set-Cookie header sets cookie in browser
-        return ResponseEntity.ok("Login success");
+        String emailFromToken = jwtUtil.getEmailFromToken(token);
+        Optional<Users> userOpt = userRepository.findByEmail(emailFromToken);
+        if (userOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Couldnt load user from token");
+        }
+        String username = userOpt.get().getUsername();
+        Map<String, String> body = Map.of(
+            "username", username,
+            "message", "Login successful"
+        );
+        return ResponseEntity.ok(body);
+    }
+
+    /** Validates the HttpOnly JWT cookie and returns the display username for session restore. */
+    @GetMapping("/me")
+    public ResponseEntity<?> me(@AuthenticationPrincipal UserDetails principal) {
+        if (principal == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        String email = principal.getUsername();
+        Optional<Users> userOpt = userRepository.findByEmail(email);
+        if (userOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        return ResponseEntity.ok(Map.of("username", userOpt.get().getUsername()));
     }
 
     @PostMapping("/logout")
